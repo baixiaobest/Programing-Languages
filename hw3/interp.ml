@@ -1,10 +1,10 @@
-(* Name:
+(* Name: Baixiao Huang
 
-   UID:
+   UID: 504313981
 
-   Others With Whom I Discussed Things:
+   Others With Whom I Discussed Things: Null
 
-   Other Resources I Consulted:
+   Other Resources I Consulted: Null
    
 *)
 
@@ -46,7 +46,19 @@ let rec patMatch (pat:mopat) (value:movalue) : moenv =
 let rec evalExpr (e:moexpr) (env:moenv) : movalue =
   match e with
       (* an integer constant evaluates to itself *)
-    IntConst(i) -> IntVal(i)
+      IntConst(i) -> IntVal(i)
+    | BoolConst(b) -> BoolVal(b)
+    | Var(name) -> Env.lookup name env
+    | BinOp(a,op,b) -> (match ((evalExpr a env),(evalExpr b env)) with
+                        (IntVal(inta), IntVal(intb)) -> (match op with
+                                                          Plus -> IntVal(inta+intb)
+                                                        | Minus -> IntVal(inta-intb)
+                                                        | Times -> IntVal(inta*intb)
+                                                        | Eq -> BoolVal(inta=intb)
+                                                        | Gt -> BoolVal(inta>intb) 
+                                                        )
+                        | (x,y) -> raise (DynamicTypeError "Operand must be Integer")
+                       )
     | _ -> raise (ImplementMe "expression evaluation not implemented")
 
 
@@ -58,5 +70,6 @@ let rec evalDecl (d:modecl) (env:moenv) : moresult =
   match d with
       (* a top-level expression has no name and is evaluated to a value *)
       Expr(e) -> (None, evalExpr e env)
+    | Let(name,exp) -> (Some name, evalExpr exp env)
     | _ -> raise (ImplementMe "let and let rec not implemented")
 
