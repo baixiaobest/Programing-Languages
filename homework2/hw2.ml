@@ -1,6 +1,4 @@
 
-exception ImplementMe
-
 (* Reference
 http://caml.inria.fr/pub/docs/manual-ocaml/libref/List.html
 https://en.wikipedia.org/wiki/Shunting-yard_algorithm
@@ -63,15 +61,16 @@ let (execute : instr list -> float) =
                             | Swap   -> (match acc with h1::h2::t-> h2::h1::t | a->a)
                             | Calculate oper -> (match acc with v1::v2::t ->
                                                  (match oper with
-                                                 Plus   -> v2+.v1::t
-                                                | Minus  -> v2-.v1::t
-                                                | Times  -> v2*.v1::t
-                                                | Divide -> v2/.v1::t) | a->a)
+                                                 Plus   -> (v2+.v1)::t
+                                                | Minus  -> (v2-.v1)::t
+                                                | Times  -> (v2*.v1)::t
+                                                | Divide -> (v2/.v1)::t) | a->a)
                         ) [] insl in
                   match r with [] -> 0. | a::t -> a;;
       
-let rec (compile : exp -> instr list) =
-  fun t -> let rec construct (tree:exp) (acc:instr list) :instr list = 
+let
+  (compile : exp -> instr list) =
+  fun t -> let rec construct tree acc = 
     (match tree with
       Num x -> acc@[Push x]
     | BinOp (left, oper, right) -> (construct right (construct left acc))@[Calculate oper]
@@ -79,8 +78,29 @@ let rec (compile : exp -> instr list) =
   construct t [];;
 
 let (decompile : instr list -> exp) =
-  raise ImplementMe
+  fun ins -> let r = List.fold_left ( fun acc inst -> match inst with 
+                                  Push x -> (Num x)::acc
+                                | Swap   -> (match acc with h1::h2::t -> h2::h1::t | a->a)
+                                | Calculate oper -> (match acc with v1::v2::t ->
+                                                      BinOp(v2, oper,v1)::t
+                                                                    | a->a
+                                                    )
+                              ) [] ins in
+              match r with [] -> Num 0. | a::_ -> a;;
 
 (* EXTRA CREDIT *)        
-let (compileOpt : exp -> (instr list * int)) =
-  raise ImplementMe
+let rec (compileOpt : exp -> (instr list * int)) =
+  fun tree -> match tree with
+                Num n -> ([Push n],1)
+              | BinOp (left, op, right) -> let (leftOpt, leftS) = compileOpt left in
+                                           let (rightOpt, rightS) = compileOpt right in
+                                           if(rightS > leftS) then
+                                            match op with
+                                              Minus -> (rightOpt@leftOpt@[Swap; Calculate Minus], rightS)
+                                            | Divide -> (rightOpt@leftOpt@[Swap; Calculate Divide], rightS)
+                                            | otherOp -> (rightOpt@leftOpt@[Calculate otherOp], rightS)
+                                           else if (rightS=leftS) then
+                                              (leftOpt@rightOpt@[Calculate op], rightS+1) 
+                                           else
+                                              (leftOpt@rightOpt@[Calculate op], leftS);; 
+                      
