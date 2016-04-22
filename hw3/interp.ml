@@ -57,8 +57,17 @@ let rec evalExpr (e:moexpr) (env:moenv) : movalue =
                                                         | Eq -> BoolVal(inta=intb)
                                                         | Gt -> BoolVal(inta>intb) 
                                                         )
-                        | (x,y) -> raise (DynamicTypeError "Operand must be Integer")
+                        | (x,y) -> raise (DynamicTypeError "Operand must be Integer =_=||")
                        )
+    | Negate(exp) -> (match (evalExpr exp env) with
+                        IntVal(myInt) -> IntVal(-myInt)
+                      | randomShit -> raise (DynamicTypeError "Operand must be Integer `(^o^)") 
+                     )
+    | If(con,e1,e2) ->(match (evalExpr con env) with
+                          BoolVal(bcon) -> if bcon then (evalExpr e1 env) else (evalExpr e2 env)
+                        | x -> raise (DynamicTypeError "Condition needs to be evaluated to boolean type x.x !!")
+                      )
+    
     | _ -> raise (ImplementMe "expression evaluation not implemented")
 
 
