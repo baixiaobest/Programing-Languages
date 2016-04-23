@@ -34,9 +34,36 @@ let rec patMatch (pat:mopat) (value:movalue) : moenv =
       (* an integer pattern matches an integer only when they are the same constant;
 	 no variables are declared in the pattern so the returned environment is empty *)
       (IntPat(i), IntVal(j)) when i=j -> Env.empty_env()
+    | (VarPat(name), x) -> let emptyEnv = Env.empty_env() in Env.add_binding name x emptyEnv
     | _ -> raise (ImplementMe "pattern matching not implemented")
 
-    
+(* ************************Illegal Helper********************************* *)
+
+(* let rec structure (e:moexpr) : string list =
+  match e with
+    IntConst(i) -> [string_of_int i]
+  | Var(name) -> [name]
+  | BinOp(a,op,b) -> let left = structure a in
+                     let right = structure b in
+                     ["op"]@left@["|"]@right@["end"]
+  | Function(arg,exp) ->(match arg with IntPat(i) -> ["func";(string_of_int i)]@(structure exp)
+                                      | VarPat(name) -> ["func";name]@(structure exp)
+                                      | x -> raise (ImplementMe "other patter matching") 
+                        )
+  | If(con, e1, e2) -> let conli = structure con in
+                       let e1li = structure e1 in
+                       let e2li = structure e2 in
+                       ["If"]@conli@["then"]@e1li@["else"]@e2li@["fi"]
+  | FunctionCall(e1, e2) -> let name = structure e1 in
+                            let arg = structure e2 in
+                            ["("]@name@arg@[")"]
+
+let rec print_list = function 
+[] -> ()
+| e::l -> print_string e ; print_string " " ; print_list l *)
+
+(* ************************************************************************** *)
+
 (* Evaluate an expression in the given environment and return the
    associated value.  Raise a MatchFailure if pattern matching fails.
    Raise a DynamicTypeError if any other kind of error occurs (e.g.,
@@ -48,7 +75,11 @@ let rec evalExpr (e:moexpr) (env:moenv) : movalue =
       (* an integer constant evaluates to itself *)
       IntConst(i) -> IntVal(i)
     | BoolConst(b) -> BoolVal(b)
-    | Var(name) -> Env.lookup name env
+    | Var(name) -> (try 
+                      Env.lookup name env 
+                    with 
+                      Env.NotBound -> raise (DynamicTypeError "Variable is not declared")
+                   )
     | BinOp(a,op,b) -> (match ((evalExpr a env),(evalExpr b env)) with
                         (IntVal(inta), IntVal(intb)) -> (match op with
                                                           Plus -> IntVal(inta+intb)
@@ -67,7 +98,17 @@ let rec evalExpr (e:moexpr) (env:moenv) : movalue =
                           BoolVal(bcon) -> if bcon then (evalExpr e1 env) else (evalExpr e2 env)
                         | x -> raise (DynamicTypeError "Condition needs to be evaluated to boolean type x.x !!")
                       )
-    
+    | Function(arg,exp) -> FunctionVal(None, arg, exp, env)
+    | FunctionCall(e1,e2) -> let value = evalExpr e2 env in
+                             let funcVal = evalExpr e1 env in
+                            (match funcVal with
+                              FunctionVal(Some name, arg, exp, env) -> let env2 = patMatch arg value in             (* match the argument *)
+                                                                  let env3 = Env.combine_envs env2 env in           (* combine with old environment *)
+                                                                  let newEnv = Env.add_binding name funcVal env3 in (* Bind function to environment if function is recursive *)
+                                                                  evalExpr exp newEnv                               (* Evaluate the function *)
+                                                                  
+                            | x -> raise (DynamicTypeError "No such function")
+                            )
     | _ -> raise (ImplementMe "expression evaluation not implemented")
 
 
@@ -80,5 +121,6 @@ let rec evalDecl (d:modecl) (env:moenv) : moresult =
       (* a top-level expression has no name and is evaluated to a value *)
       Expr(e) -> (None, evalExpr e env)
     | Let(name,exp) -> (Some name, evalExpr exp env)
-    | _ -> raise (ImplementMe "let and let rec not implemented")
+    | LetRec(name,exp) -> ( match (evalExpr exp env) with FunctionVal(n, arg, ex, en) -> (Some name,FunctionVal(Some name,arg,ex,en)) )
+    
 

@@ -31,6 +31,9 @@ module type ENV = sig
     (* Lookup a name in the environment, throwing NotBound if the name is not
        bound in the environment. *)
   val lookup: string -> 'a env -> 'a
+    (* Returns all a list of string of elements in the environment *)
+  val show_all : 'a env -> string list
+
 end;;
 
 (* The environment module implementation. *)
@@ -58,5 +61,8 @@ module Env : ENV = struct
   let lookup (s:string) (e: 'a env) :'a =
     try List.assoc s e with
 	Not_found -> raise NotBound
+
+  let show_all (e: 'a env) : string list =
+    List.map (fun (str,_) -> str) e
 end;;
 

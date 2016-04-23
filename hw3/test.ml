@@ -19,7 +19,13 @@ let tests = [
 		("false", "false");
 		("let x = 34", "val x = 34");
 		("y", "dynamic type error");
-		("x + 4", "38")
+		("x + 4", "38");
+    ("(-(1-3))*3+1=7","true");
+    ("let y = 10","val y = 10");
+    ("let rec f z = (z+y)*2","val f = <fun>");
+    ("f 5","30");
+    ("let rec f num = if num>1 then num*(f (num-1)) else 1","f = <fun>");
+    ("f 10","3628800")
 		]
 
 (* The Test Harness
