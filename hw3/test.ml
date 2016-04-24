@@ -42,9 +42,9 @@ let tests = [
     ("let x = Node","val x = Node");
     ("let y = Leaf (1,2)","val y = Leaf (1, 2)");
     ("let z =  Node(Node(Leaf 1,Node(Node(Leaf 2,Leaf 4),Leaf 5)),Leaf 6)","val z = Node (Node (Leaf 1, Node (Node (Leaf 2, Leaf 4), Leaf 5)), Leaf 6)");
-    ("let rec f x = match x with Node -> 1 | Leaf(a,b) -> a+b | x -> false", "val func = <fun>");
+    ("let rec f x = match x with Node -> 1 | Leaf(a,b) -> a+b | x -> false", "val f = <fun>");
     ("f x","1");
-    ("f y","2");
+    ("f y","3");
     ("f z","false");
     ("let rec sum t = match t with Leaf x -> x | Node(a,b) -> (sum a)+(sum b)", "val sum = <fun>");
     ("sum z","18")

@@ -143,7 +143,6 @@ let rec evalExpr (e:moexpr) (env:moenv) : movalue =
     | Data (str,right) -> match right with
                               Some exp -> DataVal(str,Some (evalExpr exp env))
                             | None -> DataVal(str, None)
-    | _ -> raise (ImplementMe "expression evaluation not implemented")
 
 
 (* Evaluate a declaration in the given environment.  Evaluation
