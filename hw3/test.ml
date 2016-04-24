@@ -24,8 +24,19 @@ let tests = [
     ("let y = 10","val y = 10");
     ("let rec f z = (z+y)*2","val f = <fun>");
     ("f 5","30");
-    ("let rec f num = if num>1 then num*(f (num-1)) else 1","f = <fun>");
-    ("f 10","3628800")
+    ("let rec f num = if num>1 then num*(f (num-1)) else 1","val f = <fun>");
+    ("f 10","3628800");
+    ("(1,2,3)","(1, 2, 3)");
+    ("let rec f (a,b,c) = a+b+c","val f = <fun>");
+    ("f (1,2,3)","6");
+    ("let rec f i = match i with 1 -> 2 | true -> false | (a,b,c) -> a+b+c | _ -> true","val f = <fun>");
+    ("f 1","2");
+    ("f true","false");
+    ("f (1,2,3)","6");
+    ("f 100","true");
+    ("let rec double i = i*2", "val double = <fun>");
+    ("let rec quadruple i = double(double(i))", "val quadruple = <fun>");
+    ("quadruple 10", "40")
 		]
 
 (* The Test Harness
