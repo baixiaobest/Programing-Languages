@@ -34,8 +34,16 @@ let rec patMatch (pat:mopat) (value:movalue) : moenv =
       (* an integer pattern matches an integer only when they are the same constant;
 	 no variables are declared in the pattern so the returned environment is empty *)
       (IntPat(i), IntVal(j)) when i=j -> Env.empty_env()
+    | (BoolPat(i), BoolVal(j)) when i=j -> Env.empty_env()
+    | (WildcardPat,_) -> Env.empty_env()
     | (VarPat(name), x) -> let emptyEnv = Env.empty_env() in Env.add_binding name x emptyEnv
-    | _ -> raise (ImplementMe "pattern matching not implemented")
+    | (TuplePat(a),TupleVal(b)) -> if (List.length a) = (List.length b) 
+                                   then 
+                                      (match (a,b) with 
+                                      (ha::ta,hb::tb) -> Env.combine_envs (patMatch ha hb) (patMatch (TuplePat ta) (TupleVal tb) )
+                                      )
+                                   else raise MatchFailure;
+    | _ -> raise MatchFailure
 
 (* ************************Illegal Helper********************************* *)
 
@@ -109,6 +117,16 @@ let rec evalExpr (e:moexpr) (env:moenv) : movalue =
                                                                   
                             | x -> raise (DynamicTypeError "No such function")
                             )
+    | Match(exp, matchList) -> let value = evalExpr exp env in
+                                (match matchList with 
+                                  (pattern, exe)::tail ->(try 
+                                                            let newEnv = patMatch pattern value in
+                                                            evalExpr exe newEnv
+                                                          with MatchFailure -> evalExpr (Match(exp, tail)) env
+                                                         )
+                                | [] -> raise MatchFailure
+                                )
+    | Tuple (tl) -> TupleVal( List.map (fun exp -> evalExpr exp env) tl )
     | _ -> raise (ImplementMe "expression evaluation not implemented")
 
 
