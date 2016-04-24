@@ -44,6 +44,10 @@ let rec patMatch (pat:mopat) (value:movalue) : moenv =
                                       | ([],[]) -> Env.empty_env()
                                       )
                                    else raise MatchFailure;
+    | (DataPat(patStr,Some patExp), DataVal(valStr,Some valExp)) -> if patStr=valStr then
+                                                            patMatch patExp valExp
+                                                          else raise MatchFailure
+    | (DataPat(patStr,None), DataVal(valStr,None)) -> if patStr=valStr then Env.empty_env() else raise MatchFailure
     | _ -> raise MatchFailure
 
 (* ************************Illegal Helper********************************* *)
@@ -66,6 +70,12 @@ let rec patMatch (pat:mopat) (value:movalue) : moenv =
   | FunctionCall(e1, e2) -> let name = structure e1 in
                             let arg = structure e2 in
                             ["("]@name@arg@[")"]
+  | Data (str,right) -> let rightStr =
+                        (match right with
+                            Some x -> structure x
+                          | None -> ["None"]
+                        ) in
+                        [str]@["("]@rightStr@[")"]
 
 let rec print_list = function 
 [] -> ()
@@ -111,8 +121,8 @@ let rec evalExpr (e:moexpr) (env:moenv) : movalue =
     | FunctionCall(e1,e2) -> let value = evalExpr e2 env in
                              let funcVal = evalExpr e1 env in
                             (match funcVal with
-                              FunctionVal(Some name, arg, exp, env) -> let env2 = patMatch arg value in             (* match the argument *)
-                                                                  let env3 = Env.combine_envs env2 env in           (* combine with old environment *)
+                              FunctionVal(Some name, arg, exp, env) ->let env2 = patMatch arg value in              (* match the argument *)
+                                                                  let env3 = Env.combine_envs env env2 in           (* combine with old environment *)
                                                                   let newEnv = Env.add_binding name funcVal env3 in (* Bind function to environment if function is recursive *)
                                                                   evalExpr exp newEnv                               (* Evaluate the function *)
                                                                   
@@ -122,12 +132,15 @@ let rec evalExpr (e:moexpr) (env:moenv) : movalue =
                                 (match matchList with 
                                   (pattern, exe)::tail ->(try 
                                                             let newEnv = patMatch pattern value in
-                                                            evalExpr exe newEnv
+                                                            evalExpr exe (Env.combine_envs env newEnv)
                                                           with MatchFailure -> evalExpr (Match(exp, tail)) env
                                                          )
                                 | [] -> raise MatchFailure
                                 )
     | Tuple (tl) -> TupleVal( List.map (fun exp -> evalExpr exp env) tl )
+    | Data (str,right) -> match right with
+                              Some exp -> DataVal(str,Some (evalExpr exp env))
+                            | None -> DataVal(str, None)
     | _ -> raise (ImplementMe "expression evaluation not implemented")
 
 

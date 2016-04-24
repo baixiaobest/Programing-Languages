@@ -22,9 +22,9 @@ let tests = [
 		("x + 4", "38");
     ("(-(1-3))*3+1=7","true");
     ("let y = 10","val y = 10");
-    ("let rec f z = (z+y)*2","val f = <fun>");
+    ("let rec f x = (x+y)*2","val f = <fun>");
     ("f 5","30");
-    ("let rec f num = if num>1 then num*(f (num-1)) else 1","val f = <fun>");
+    ("let rec f x = if x>1 then x*(f (x-1)) else 1","val f = <fun>");
     ("f 10","3628800");
     ("(1,2,3)","(1, 2, 3)");
     ("let rec f (a,b,c) = a+b+c","val f = <fun>");
@@ -36,7 +36,18 @@ let tests = [
     ("f 100","true");
     ("let rec double i = i*2", "val double = <fun>");
     ("let rec quadruple i = double(double(i))", "val quadruple = <fun>");
-    ("quadruple 10", "40")
+    ("let rec twice f = f(f(10))","val twice = <fun>");
+    ("twice double", "40");
+    ("quadruple 10", "40");
+    ("let x = Node","val x = Node");
+    ("let y = Leaf (1,2)","val y = Leaf (1, 2)");
+    ("let z =  Node(Node(Leaf 1,Node(Node(Leaf 2,Leaf 4),Leaf 5)),Leaf 6)","val z = Node (Node (Leaf 1, Node (Node (Leaf 2, Leaf 4), Leaf 5)), Leaf 6)");
+    ("let rec f x = match x with Node -> 1 | Leaf(a,b) -> a+b | x -> false", "val func = <fun>");
+    ("f x","1");
+    ("f y","2");
+    ("f z","false");
+    ("let rec sum t = match t with Leaf x -> x | Node(a,b) -> (sum a)+(sum b)", "val sum = <fun>");
+    ("sum z","18")
 		]
 
 (* The Test Harness
