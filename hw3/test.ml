@@ -36,8 +36,8 @@ let tests = [
     ("f 100","true");
     ("let rec double i = i*2", "val double = <fun>");
     ("let rec quadruple i = double(double(i))", "val quadruple = <fun>");
-    ("let rec twice f = f(f(10))","val twice = <fun>");
-    ("twice double", "40");
+    ("let rec twice f = function x -> f(f(x))","val twice = <fun>");
+    ("(twice double) 10", "40");
     ("quadruple 10", "40");
     ("let x = Node","val x = Node");
     ("let y = Leaf (1,2)","val y = Leaf (1, 2)");

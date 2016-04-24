@@ -2,7 +2,7 @@
 
    UID: 504313981
 
-   Others With Whom I Discussed Things: Null
+   Others With Whom I Discussed Things: TA
 
    Other Resources I Consulted: Null
    
@@ -125,7 +125,9 @@ let rec evalExpr (e:moexpr) (env:moenv) : movalue =
                                                                   let env3 = Env.combine_envs env env2 in           (* combine with old environment *)
                                                                   let newEnv = Env.add_binding name funcVal env3 in (* Bind function to environment if function is recursive *)
                                                                   evalExpr exp newEnv                               (* Evaluate the function *)
-                                                                  
+                            | FunctionVal(None, arg, exp, env) -> let env2 = patMatch arg value in
+                                                                  let newEnv = Env.combine_envs env env2 in
+                                                                  evalExpr exp newEnv                              
                             | x -> raise (DynamicTypeError "No such function")
                             )
     | Match(exp, matchList) -> let value = evalExpr exp env in
