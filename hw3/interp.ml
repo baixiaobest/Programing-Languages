@@ -40,7 +40,8 @@ let rec patMatch (pat:mopat) (value:movalue) : moenv =
     | (TuplePat(a),TupleVal(b)) -> if (List.length a) = (List.length b) 
                                    then 
                                       (match (a,b) with 
-                                      (ha::ta,hb::tb) -> Env.combine_envs (patMatch ha hb) (patMatch (TuplePat ta) (TupleVal tb) )
+                                        (ha::ta,hb::tb) -> Env.combine_envs (patMatch ha hb) (patMatch (TuplePat ta) (TupleVal tb) )
+                                      | ([],[]) -> Env.empty_env()
                                       )
                                    else raise MatchFailure;
     | _ -> raise MatchFailure
