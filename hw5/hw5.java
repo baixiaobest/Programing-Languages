@@ -12,6 +12,7 @@ import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.IntStream;
+import static java.lang.Math.toIntExact;
 
 // a marker for code that you need to implement
 class ImplementMe extends RuntimeException {}
@@ -114,7 +115,7 @@ class PPMImage {
     public PPMImage greyscale() {
 		RGB[] newImg = Arrays.stream(pixels).parallel().map(p-> {int a = Math.round(0.299f*p.R+0.587f*p.G+0.114f*p.B); return new RGB(a,a,a);}).toArray(s->new RGB[s]);
 		return new PPMImage(width, height, maxColorVal, newImg);
-    }    
+    }
     
 	// implement using Java's Fork/Join library
     public PPMImage mirrorImage() {
@@ -123,10 +124,27 @@ class PPMImage {
 		return new PPMImage(width,height,maxColorVal,newImg);
     }
 
+    // public PPMImage mirrorImage3(){
+    // 	RGB[] newImg = pixels.clone();
+    // 	for (int i=0; i<height; i++) {
+    // 		int j = i*width;
+    // 		int k = (i+1)*width-1;
+    // 		while(j<k){
+    // 			RGB tmp = newImg[j];
+    // 			newImg[j] = newImg[k];
+    // 			newImg[k] = tmp;
+    // 			j = j + 1;
+    // 			k = k - 1;
+    // 		}
+    // 	}
+    // 	return new PPMImage(width, height, maxColorVal, newImg);
+    // }
+
 	// implement using Java 8 Streams
     public PPMImage mirrorImage2() {
     	RGB[] newPixels = pixels.clone();
 		RGB[] newImg = IntStream.range(0,newPixels.length)
+				 .parallel()
 				 .map(i->width*(i/width+1)-i%width-1)
 				 .mapToObj(i->newPixels[i])
 				 .toArray(RGB[]::new);
@@ -135,7 +153,13 @@ class PPMImage {
 
 	// implement using Java's Fork/Join library
     public PPMImage gaussianBlur(int radius, double sigma) {
-		throw new ImplementMe();
+    	double[][] kernel = Gaussian.gaussianFilter(radius, sigma);
+    	RGB[] newImg = new RGB[pixels.length];
+    	for (int i=0; i<pixels.length; i++) {
+    		newImg[i] = new RGB(0,0,0);
+    	}
+    	(new GaussianBlurTask(pixels, newImg, width, height, 0, pixels.length, 10, kernel)).compute();
+    	return new PPMImage(width, height, maxColorVal, newImg);
     }
 
 }
@@ -169,6 +193,62 @@ class MirrorTask extends RecursiveAction{
 			invokeAll(new MirrorTask(pixels,lo,mid,width, half), new MirrorTask(pixels,mid,hi,width,height - half));
 		}
 	}
+}
+
+
+class GaussianBlurTask extends RecursiveAction{
+	private RGB[] pixels;
+	private RGB[] newPixels;
+	private int width;
+	private int height;
+	private int lo;
+	private int hi;
+	private int SEQ_THRSHLD;
+	private double[][] kernel;
+
+	public GaussianBlurTask(RGB[] arr, RGB[] newArr, int wid, int hght, int lo, int hi, int thres, double[][] krnl){
+		pixels = arr;
+		newPixels = newArr;
+		width = wid;
+		height = hght;
+		this.lo = lo;
+		this.hi = hi;
+		SEQ_THRSHLD = thres;
+		kernel = krnl;
+	}
+
+	public void compute(){
+		//divide the height
+		if(hi-lo > width){
+			int midHeight = (hi-lo)/width/2;
+			int mid = lo + midHeight*width;
+			invokeAll(new GaussianBlurTask(pixels, newPixels,width,height,lo,mid,SEQ_THRSHLD,kernel),
+				      new GaussianBlurTask(pixels, newPixels,width,height,mid,hi,SEQ_THRSHLD,kernel));
+		}else if(hi-lo>SEQ_THRSHLD){  // divide the width
+			int mid = (hi+lo)/2;
+			invokeAll(new GaussianBlurTask(pixels, newPixels, width, height, lo, mid, SEQ_THRSHLD,kernel),
+					  new GaussianBlurTask(pixels, newPixels, width, height, mid, hi, SEQ_THRSHLD, kernel));
+		}else{
+			for (int i=lo; i<hi; i++) {
+				int radius = kernel.length/2;
+				for (int j=0; j<kernel.length; j++) {
+					for(int k=0; k<kernel.length; k++){
+						int pixelX = i%width;    // center
+						int pixelY = i/width;    // center
+						int x = pixelX - radius + k; 
+						x = x < 0 ? 0 : x < width ? x : width - 1;
+						int y = pixelY - radius + j;
+						y = y < 0 ? 0 : y < height ? y : height - 1;
+						// if(newPixels[pixelY*width + pixelX]==null) newPixels[pixelY*width + pixelX] = new RGB(0,0,0);
+						newPixels[pixelY*width + pixelX].R += toIntExact(Math.round(pixels[y*width + x].R*kernel[j][k]));
+						newPixels[pixelY*width + pixelX].G += toIntExact(Math.round(pixels[y*width + x].G*kernel[j][k]));
+						newPixels[pixelY*width + pixelX].B += toIntExact(Math.round(pixels[y*width + x].B*kernel[j][k]));
+					}
+				}
+			}
+		}
+	}
+
 }
 
 
@@ -208,6 +288,7 @@ class Test {
     	original.greyscale().toFile("greyscale.ppm");
     	original.mirrorImage().toFile("mirrorImage.ppm");
     	original.mirrorImage2().toFile("mirrorImage2.ppm");
+    	original.gaussianBlur(20,5).toFile("gaussianBlur.ppm");
     }
 }
 
