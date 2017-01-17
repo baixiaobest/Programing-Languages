@@ -2,7 +2,9 @@
 
    UID: 504313981
 
-   Others With Whom I Discussed Things: Li Wei Tseng
+   Others With Whom I Discussed Things: 
+   Li Wei Tseng
+   John Goodlad
 
    Other Resources I Consulted:
    
@@ -12,7 +14,6 @@ import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.IntStream;
-import static java.lang.Math.toIntExact;
 
 // a marker for code that you need to implement
 class ImplementMe extends RuntimeException {}
@@ -158,7 +159,13 @@ class PPMImage {
     	for (int i=0; i<pixels.length; i++) {
     		newImg[i] = new RGB(0,0,0);
     	}
-    	(new GaussianBlurTask(pixels, newImg, width, height, 0, pixels.length, 10, kernel)).compute();
+    	// for (int i=0; i<kernel.length; i++) {
+    	// 	for (int j=0; j<kernel.length; j++) {
+    	// 		System.out.print(kernel[i][j]+" ");
+    	// 	}
+    	// 	System.out.println("");
+    	// }
+    	(new GaussianBlurTask(pixels, newImg, width, height, 0, pixels.length, 10, kernel, maxColorVal)).compute();
     	return new PPMImage(width, height, maxColorVal, newImg);
     }
 
@@ -205,8 +212,9 @@ class GaussianBlurTask extends RecursiveAction{
 	private int hi;
 	private int SEQ_THRSHLD;
 	private double[][] kernel;
+	private int maxVal;
 
-	public GaussianBlurTask(RGB[] arr, RGB[] newArr, int wid, int hght, int lo, int hi, int thres, double[][] krnl){
+	public GaussianBlurTask(RGB[] arr, RGB[] newArr, int wid, int hght, int lo, int hi, int thres, double[][] krnl, int max){
 		pixels = arr;
 		newPixels = newArr;
 		width = wid;
@@ -215,6 +223,7 @@ class GaussianBlurTask extends RecursiveAction{
 		this.hi = hi;
 		SEQ_THRSHLD = thres;
 		kernel = krnl;
+		maxVal = max;
 	}
 
 	public void compute(){
@@ -222,15 +231,16 @@ class GaussianBlurTask extends RecursiveAction{
 		if(hi-lo > width){
 			int midHeight = (hi-lo)/width/2;
 			int mid = lo + midHeight*width;
-			invokeAll(new GaussianBlurTask(pixels, newPixels,width,height,lo,mid,SEQ_THRSHLD,kernel),
-				      new GaussianBlurTask(pixels, newPixels,width,height,mid,hi,SEQ_THRSHLD,kernel));
+			invokeAll(new GaussianBlurTask(pixels, newPixels,width,height,lo,mid,SEQ_THRSHLD,kernel,maxVal),
+				      new GaussianBlurTask(pixels, newPixels,width,height,mid,hi,SEQ_THRSHLD,kernel,maxVal));
 		}else if(hi-lo>SEQ_THRSHLD){  // divide the width
 			int mid = (hi+lo)/2;
-			invokeAll(new GaussianBlurTask(pixels, newPixels, width, height, lo, mid, SEQ_THRSHLD,kernel),
-					  new GaussianBlurTask(pixels, newPixels, width, height, mid, hi, SEQ_THRSHLD, kernel));
+			invokeAll(new GaussianBlurTask(pixels, newPixels, width, height, lo, mid, SEQ_THRSHLD,kernel,maxVal),
+					  new GaussianBlurTask(pixels, newPixels, width, height, mid, hi, SEQ_THRSHLD, kernel,maxVal));
 		}else{
 			for (int i=lo; i<hi; i++) {
 				int radius = kernel.length/2;
+				double R = 0; double G = 0; double B = 0;
 				for (int j=0; j<kernel.length; j++) {
 					for(int k=0; k<kernel.length; k++){
 						int pixelX = i%width;    // center
@@ -240,11 +250,19 @@ class GaussianBlurTask extends RecursiveAction{
 						int y = pixelY - radius + j;
 						y = y < 0 ? 0 : y < height ? y : height - 1;
 						// if(newPixels[pixelY*width + pixelX]==null) newPixels[pixelY*width + pixelX] = new RGB(0,0,0);
-						newPixels[pixelY*width + pixelX].R += toIntExact(Math.round(pixels[y*width + x].R*kernel[j][k]));
-						newPixels[pixelY*width + pixelX].G += toIntExact(Math.round(pixels[y*width + x].G*kernel[j][k]));
-						newPixels[pixelY*width + pixelX].B += toIntExact(Math.round(pixels[y*width + x].B*kernel[j][k]));
+						R += pixels[y*width + x].R*kernel[j][k];
+						G += pixels[y*width + x].G*kernel[j][k];
+						B += pixels[y*width + x].B*kernel[j][k];
+						
 					}
 				}
+				newPixels[i].R = (int)(Math.round(R));
+				newPixels[i].G = (int)(Math.round(G));
+				newPixels[i].B = (int)(Math.round(B));
+				newPixels[i].R = newPixels[i].R > maxVal ? maxVal : newPixels[i].R;
+				newPixels[i].G = newPixels[i].G > maxVal ? maxVal : newPixels[i].G;
+				newPixels[i].B = newPixels[i].B > maxVal ? maxVal : newPixels[i].B;
+
 			}
 		}
 	}

@@ -55,7 +55,7 @@ interface Animal{
 	void eat(){}
 }
 
-interface Cow{
+interface Cow extends Animal{
 	void moo(){}
 }
 
@@ -103,7 +103,7 @@ class X{
 	void m(A a){System.out.println("X,A");}
 }
 
-class Y extends A{
+class Y extends X{
 	void m(B b) {System.out.println("Y,B");}
 }
 
@@ -111,7 +111,7 @@ class Stuff{
 	void stuff(){
 		X x = new Y();
 		x.m(new A());   // prints X,A, because parameter and argument match with X.m(A)
-		x.m(new B());   // prints X,B, because x is statically X, then X.m(A) is invoked
+		x.m(new B());   // prints X,A, because x is statically X, then X.m(A) is invoked
 	}
 }
 

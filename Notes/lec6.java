@@ -114,7 +114,7 @@ s2.remove("hi") // s no longer contains "hi"
 
 	In java, parameter passing is by value:
 		the value of the actual parameter is copied into the formal parameter
-		But the values are always pointers, except for premitives
+		But the values are always pointers, except for primitives
 	key property: the value of the actual parameter cannot be changed by the function call
 */
 
@@ -144,7 +144,7 @@ Integer plus(Integer a, Integer b){
 Integer x = new Integer(3);
 Integer y = new Integer(4);
 Integer z = plus(x,y);
-// x = 3, y = 4, z = 7
+// x = 7, y = 4, z = 7
 
 
 /////////// Call by reference in C++

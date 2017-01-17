@@ -26,6 +26,6 @@ class Main{
    		((D) c2).foo(); //tell type checker to treat c2 as D, then there is not compile error, foo() can be invoked during run time
    		((C) d).m(); //still prints D because fooling typechecker that it is C does not change the fact that it is still D
 		C cc = (C) d;
-		cc.m();
+		cc.m(); //still prints D because casting only fool the type checker at compile time.
 	}
 }

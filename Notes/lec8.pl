@@ -120,7 +120,7 @@ move([P,W,G,C], goat, [Q,W,Q,C]) :- P=G,opposite(P,Q).
 move([P,W,G,C], cabbage, [Q,W,G,Q]) :- P=C,opposite(W,G),opposite(P,Q).
 
 puzzle(End,End,[]).
-puzzle(Start,End,(Move,Moves)) :- move(Start, Move, S), puzzle(S,End,Moves).
+puzzle(Start,End,.(Move,Moves)) :- move(Start, Move, S), puzzle(S,End,Moves).
 
 /*
 $ length(Moves,X),X #< 10,puzzle([west,west,west,west], [east,east,east,east], Moves)

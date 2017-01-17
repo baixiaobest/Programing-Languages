@@ -1,0 +1,5 @@
+consult(hw6).
+findall(Y, duplist([1,2,3],Y), L), L=[[1,1,2,2,3,3]].
+findall(Y, duplist(Y,[1,1,2,2,3,3]), L), L=[[1,2,3]].
+findall(Y,subseq(Y,[1,2,3]), L).
+

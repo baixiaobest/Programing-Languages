@@ -158,7 +158,7 @@ class ListBag extends Collection{
 
 /*	In Summary
 	When we need subtyping without inheritance: implement shared interface
-				 inheritance without subtyping: implement shared abstract class
+				 inheritance without subtyping: extend shared abstract class
 */
 
 
